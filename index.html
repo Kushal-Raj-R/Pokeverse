@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokéVerse Ultra — Advanced Pokédex, Stats & Evolution Lines</title>
+  <meta name="description" content="Explore every Pokémon with real-time stats, types, animated showdown sprites, authentic audio cries, complete evolution lines, and dynamic type matchups using PokeAPI.">
+  <meta name="theme-color" content="#0a0d14">
+  
+  <!-- Google Fonts Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="pokeball-logo" aria-hidden="true"></div>
+        <div class="brand-text">
+          <h1>PokéVerse <span class="badge-pill">ULTRA DEX</span></h1>
+          <p>Complete Database &bull; Stats, Types, Evolution Trees & Cries</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="favorites-toggle-btn" class="action-btn" title="View Favorite Pokémon" aria-label="Favorites">
+          <span aria-hidden="true">❤️</span> Favorites
+          <span id="favorites-count" class="btn-count">0</span>
+        </button>
+        <button id="surprise-btn" class="action-btn surprise-btn" title="Inspect a random Pokémon" aria-label="Random Pokémon">
+          <span aria-hidden="true">🎲</span> Surprise Me!
+        </button>
+      </div>
+    </header>
+
+    <!-- Controls / Filters / Search -->
+    <section class="controls-section" aria-label="Search and Filter Controls">
+      <div class="search-and-selectors">
+        <!-- Search Input -->
+        <div class="search-wrapper">
+          <div class="search-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <input 
+            type="search" 
+            id="pokemon-search-input" 
+            class="search-input" 
+            placeholder="Search by name (e.g. Ditto, Charizard) or #ID..."
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button id="search-clear-btn" class="search-clear-btn" title="Clear search" aria-label="Clear search">&times;</button>
+        </div>
+
+        <!-- Filter Selectors -->
+        <div class="filter-dropdown-group">
+          <!-- Generation Selector -->
+          <div class="select-wrapper">
+            <select id="gen-select" class="custom-select" aria-label="Filter by Generation">
+              <!-- Dynamically populated -->
+            </select>
+            <span class="select-arrow" aria-hidden="true">▼</span>
+          </div>
+
+          <!-- Sort Selector -->
+          <div class="select-wrapper">
+            <select id="sort-select" class="custom-select" aria-label="Sort Pokémon">
+              <option value="id-asc">Lowest Number (#1 ➔ #1025)</option>
+              <option value="id-desc">Highest Number (#1025 ➔ #1)</option>
+              <option value="name-asc">Name (A ➔ Z)</option>
+              <option value="name-desc">Name (Z ➔ A)</option>
+              <option value="bst-desc">Highest Base Stats (BST)</option>
+            </select>
+            <span class="select-arrow" aria-hidden="true">▼</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Type Filter Pills -->
+      <div id="type-pills" class="type-pills-container" role="radiogroup" aria-label="Filter by Pokémon Type">
+        <!-- Dynamically rendered type buttons -->
+      </div>
+
+      <!-- Status Bar -->
+      <div class="results-status-bar">
+        <div class="results-count" id="results-count-text">
+          Showing <span id="visible-count">0</span> of <span id="total-count">0</span> Pokémon
+        </div>
+        <div id="active-filter-indicator" class="active-filter-indicator"></div>
+      </div>
+    </section>
+
+    <!-- Main Pokémon Grid -->
+    <main id="pokemon-grid" class="pokemon-grid" aria-label="Pokémon Catalog">
+      <!-- Pokémon cards rendered dynamically -->
+    </main>
+
+    <!-- Load More Button -->
+    <div class="load-more-section">
+      <button id="load-more-btn" class="btn-load-more" style="display: none;">
+        <span>Load More Pokémon</span>
+        <span aria-hidden="true">▼</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Detailed Pokémon Inspection Modal -->
+  <div id="pokemon-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-sheet" id="modal-sheet">
+      <!-- Left Showcase Column -->
+      <div class="modal-left-showcase" id="modal-banner">
+        <!-- Top Navigation Bar -->
+        <div class="modal-showcase-nav">
+          <div class="modal-quick-nav">
+            <button id="modal-prev-btn" class="modal-nav-btn" title="Previous Pokémon (Left Arrow)">
+              &#8592; Prev
+            </button>
+            <button id="modal-next-btn" class="modal-nav-btn" title="Next Pokémon (Right Arrow)">
+              Next &#8594;
+            </button>
+          </div>
+
+          <div class="modal-nav-actions">
+            <button id="modal-fav-btn" class="btn-icon-round" title="Toggle Favorite" aria-label="Favorite">
+              ❤️
+            </button>
+            <button id="modal-close-btn" class="modal-close-btn" title="Close Modal (Escape)" aria-label="Close modal">&times;</button>
+          </div>
+        </div>
+
+        <!-- Artwork & Visual Display -->
+        <div class="modal-showcase-art">
+          <div class="art-backdrop-glow"></div>
+          <img id="modal-pokemon-img" class="modal-pokemon-img" src="" alt="Pokémon Artwork">
+          
+          <div class="artwork-controls">
+            <button id="shiny-toggle-btn" class="btn-pill-toggle" title="Toggle Shiny Sprite">
+              <span>✨</span> Shiny
+            </button>
+            <button id="cry-play-btn" class="cry-player-btn" title="Play Authentic Pokémon Cry">
+              <span class="sound-wave" aria-hidden="true">
+                <span class="sound-bar"></span>
+                <span class="sound-bar"></span>
+                <span class="sound-bar"></span>
+              </span>
+              <span>Play Cry</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Identification Info in Showcase -->
+        <div class="modal-showcase-info">
+          <span id="modal-pokemon-id" class="modal-id-badge">#0000</span>
+          <h2 id="modal-pokemon-name" class="modal-pokemon-name">Loading...</h2>
+          <div id="modal-pokemon-genus" class="modal-genus">Pokémon Category</div>
+          <div id="modal-pokemon-types" class="modal-types-row"></div>
+        </div>
+      </div>
+
+      <!-- Right Content Column -->
+      <div class="modal-right-content">
+        <!-- Modal Tabs Navigation -->
+        <div class="modal-tabs" role="tablist">
+          <button class="modal-tab-btn active" data-tab="about" role="tab" aria-selected="true">
+            📖 About
+          </button>
+          <button class="modal-tab-btn" data-tab="stats" role="tab" aria-selected="false">
+            📊 Base Stats
+          </button>
+          <button class="modal-tab-btn" data-tab="evolution" role="tab" aria-selected="false">
+            🌿 Evolution Line
+          </button>
+          <button class="modal-tab-btn" data-tab="matchups" role="tab" aria-selected="false">
+            🛡️ Type Matchup
+          </button>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="modal-body">
+          <!-- TAB 1: About -->
+          <div id="tab-about" class="tab-pane active" role="tabpanel">
+            <div id="modal-flavor-text" class="flavor-text-box">
+              Loading Pokédex entry...
+            </div>
+
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-title">Height</div>
+                <div id="modal-height" class="metric-value">-- m</div>
+                <div id="modal-height-sub" class="metric-sub">-- ft</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-title">Weight</div>
+                <div id="modal-weight" class="metric-value">-- kg</div>
+                <div id="modal-weight-sub" class="metric-sub">-- lbs</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-title">Catch Rate</div>
+                <div id="modal-catch-rate" class="metric-value">--</div>
+                <div class="metric-sub">Base Probability</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-title">Growth Rate</div>
+                <div id="modal-growth-rate" class="metric-value" style="text-transform: capitalize;">--</div>
+                <div class="metric-sub">Leveling Speed</div>
+              </div>
+            </div>
+
+            <div class="abilities-section">
+              <div class="metric-title" style="margin-bottom: 0.6rem;">Abilities</div>
+              <div id="modal-abilities" class="abilities-list"></div>
+            </div>
+          </div>
+
+          <!-- TAB 2: Stats -->
+          <div id="tab-stats" class="tab-pane" role="tabpanel">
+            <div id="modal-stats-list" class="stats-container">
+              <!-- Dynamically populated stat rows -->
+            </div>
+
+            <div class="bst-summary-card">
+              <div>
+                <div class="metric-title">Base Stat Total (BST)</div>
+                <div class="bst-score">
+                  <span id="modal-bst-value">000</span>
+                  <small>/ 780 Max</small>
+                </div>
+              </div>
+              <div id="modal-bst-tier" class="bst-tier-badge">Tier: Standard</div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Evolution -->
+          <div id="tab-evolution" class="tab-pane" role="tabpanel">
+            <div id="modal-evolution-container" class="evolution-chain-container">
+              <!-- Dynamically populated evolution tree -->
+            </div>
+          </div>
+
+          <!-- TAB 4: Matchups -->
+          <div id="tab-matchups" class="tab-pane" role="tabpanel">
+            <div id="modal-matchups-container" class="type-matchups-section">
+              <!-- Dynamically populated defense effectiveness -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast-notification" role="alert" aria-live="polite">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg">Notification</span>
+  </div>
+
+  <!-- Audio Player for Cries -->
+  <audio id="cry-audio" preload="none"></audio>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
